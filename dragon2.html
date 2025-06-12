@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>משחק גידול דרקון מתקדם</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+  body {
+    margin: 0;
+    background: linear-gradient(135deg, #0b0f26, #3a1a3a);
+    font-family: 'Press Start 2P', cursive;
+    color: #eee;
+    text-align: center;
+    user-select: none;
+    overflow-x: hidden;
+  }
+  #start-screen, #game-screen, #battle-screen, #store-screen, #mini-game-screen, #story-screen {
+    display: none;
+    padding: 20px;
+  }
+  #start-screen.active, #game-screen.active, #battle-screen.active, #store-screen.active, #mini-game-screen.active, #story-screen.active {
+    display: block;
+  }
+  h1, h2 {
+    margin-bottom: 20px;
+    color: #ffb347;
+    text-shadow: 0 0 5px #ff6f00;
+  }
+  button {
+    background: #ff6f00;
+    border: none;
+    color: white;
+    font-size: 14px;
+    padding: 15px 30px;
+    margin: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  button:hover {
+    background: #ffa040;
+  }
+  #dragon-img {
+    width: 200px;
+    height: 200px;
+    image-rendering: pixelated;
+    transition: transform 0.3s ease;
+  }
+  #power-bar {
+    width: 300px;
+    height: 30px;
+    background: #444;
+    border-radius: 15px;
+    margin: 20px auto;
+    overflow: hidden;
+    box-shadow: 0 0 10px #ffb347;
+  }
+  #power-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ff9f00, #ff6f00);
+    transition: width 0.5s ease;
+  }
+  #actions button {
+    font-size: 16px;
+    padding: 12px 20px;
+    margin: 8px;
+  }
+  #score {
+    font-size: 18px;
+    margin: 10px 0;
+    color: #fff;
+    text-shadow: 0 0 5px #ffa040;
+  }
+  #message {
+    font-size: 16px;
+    margin: 15px 0;
+    height: 40px;
+  }
+  /* Mini-game styles */
+  #clicker-btn {
+    background: #28a745;
+    font-size: 20px;
+    padding: 20px 40px;
+    border-radius: 15px;
+    box-shadow: 0 0 10px #28a745;
+    user-select: none;
+  }
+  #potion {
+    width: 60px;
+    cursor: pointer;
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px);}
+    50% { transform: translateY(-15px);}
+  }
+  /* Store styles */
+  .store-item {
+    background: #3a1a3a;
+    border: 2px solid #ff6f00;
+    border-radius: 15px;
+    padding: 15px;
+    margin: 10px auto;
+    max-width: 300px;
+  }
+  .store-item button {
+    margin-top: 10px;
+    width: 100%;
+    background: #ff6f00;
+  }
+  /* Battle styles */
+  #battle-enemy-img {
+    width: 150px;
+    height: 150px;
+    image-rendering: pixelated;
+  }
+  #battle-info {
+    margin-top: 10px;
+  }
+  #health-bar-bg {
+    width: 250px;
+    height: 25px;
+    background: #444;
+    border-radius: 15px;
+    margin: 10px auto;
+  }
+  #health-bar-fill {
+    height: 100%;
+    width: 100%;
+    background: #ff4136;
+    border-radius: 15px;
+    transition: width 0.5s ease;
+  }
+  #dragon-health-bar-fill {
+    background: #00cc44;
+  }
+  #story-text {
+    max-width: 600px;
+    margin: 20px auto;
+    font-size: 16px;
+    color: #ffa040;
+    min-height: 120px;
+  }
+  #choice-buttons button {
+    background: #ffa040;
+    color: #3a1a3a;
+    margin: 10px 5px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Start Screen -->
+<div id="start-screen" class="active">
+  <h1>🐉 ברוכים הבאים למשחק גידול דרקון!</h1>
+  <button onclick="startGame()">התחל לגדל את הדרקון שלך</button>
+</div>
+
+<!-- Story Screen -->
+<div id="story-screen">
+  <h2>סיפור ההתחלה</h2>
+  <div id="story-text"></div>
+  <div id="choice-buttons"></div>
+</div>
+
+<!-- Main Game Screen -->
+<div id="game-screen">
+  <h2>דרקונך לידך</h2>
+  <img id="dragon-img" src="https://shorturl.at/4lpo7" alt="דרקון קטן" />
+  <div id="power-bar"><div id="power-fill"></div></div>
+  <div id="score">נקודות: 0</div>
+  <div id="message"></div>
+  <div id="actions">
+    <button onclick="performAction('feed')">🍗 האכיל</button>
+    <button onclick="performAction('wash')">🚿 קילח</button>
+    <button onclick="performAction('water')">💧 השקה</button>
+    <button onclick="performAction('pet')">🖐 ליטוף</button>
+    <button onclick="performAction('train')">⚔ אימון</button>
+    <button onclick="openMiniGame()">🎯 אתגר קליקים</button>
+    <button onclick="openStore()">🛒 חנות שיקויים</button>
+    <button onclick="startBattle()">⚔️ קרב בוס</button>
+  </div>
+</div>
+
+<!-- Mini Game Screen -->
+<div id="mini-game-screen">
+  <h2>אתגר קליקים - לחץ כמה שיותר בתוך 10 שניות!</h2>
+  <button id="clicker-btn" onclick="clickButton()">לחץ כאן!</button>
+  <div id="timer">זמן שנותר: 10</div>
+  <div id="click-count">קליקים: 0</div>
+  <button onclick="exitMiniGame()">חזור למשחק</button>
+</div>
+
+<!-- Store Screen -->
+<div id="store-screen">
+  <h2>חנות השיקויים</h2>
+  <div class="store-item">
+    <div>שיקוי בריאות (+20 נקודות)</div>
+    <button onclick="buyPotion('health', 30)">קנה ב-30 נקודות</button>
+  </div>
+  <div class="store-item">
+    <div>שיקוי אימון (+15 נקודות אימון)</div>
+    <button onclick="buyPotion('training', 40)">קנה ב-40 נקודות</button>
+  </div>
+  <div class="store-item">
+    <div>שיקוי קסם (מגדיל נקודות קליקים)</div>
+    <button onclick="buyPotion('magic', 50)">קנה ב-50 נקודות</button>
+  </div>
+  <button onclick="exitStore()">חזור למשחק</button>
+</div>
+
+<!-- Battle Screen -->
+<div id="battle-screen">
+  <h2>קרב מול הבוס האחרון!</h2>
+  <div>
+    <img id="dragon-battle-img" src="https://shorturl.at/afTZf" alt="דרקון קרבי" />
+    <div id="battle-info">
+      <div>בריאות דרקון: <span id="dragon-health">100</span></div>
+      <div id="health-bar-bg"><div id="dragon-health-bar-fill"></div></div>
+      <div>בריאות בוס: <span id="boss-health">100</span></div>
+      <div id="health-bar-bg"><div id="boss-health-bar-fill"></div></div>
+    </div>
+  </div>
+  <button onclick="playerAttack()">תקוף!</button>
+  <button onclick="exitBattle()">ברח מהקרב</button>
+  <div id="battle-message"></div>
+</div>
+
+<audio id="grow-sound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+<audio id="click-sound" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+<audio id="attack-sound" src="https://actions.google.com/sounds/v1/impacts/sword_hit.ogg"></audio>
+<audio id="boss-hit-sound" src="https://actions.google.com/sounds/v1/impacts/metal_thud.ogg"></audio>
+
+<script>
+  // משתנים כלליים
+  let score = 0;
+  let actionsDone = 0;
+  let dragonStage = 0; // 0 - קטן, 1 - בינוני, 2 - גדול, 3 - בוס
+  let trainingPoints = 0;
+  let magicActive = false;
+
+  // דרקון, בריאות
+  let dragonHealth = 100;
+  let bossHealth = 100;
+  const maxDragonHealth = 100;
+  const maxBossHealth = 100;
+
+  // אלמנטים
+  const startScreen = document.getElementById('start-screen');
+  const gameScreen = document.getElementById('game-screen');
+  const dragonImg = document.getElementById('dragon-img');
+  const powerFill = document.getElementById('power-fill');
+  const scoreElement = document.getElementById('score');
+  const messageElement = document.getElementById('message');
+  const growSound = document.getElementById('grow-sound');
+  const clickSound = document.getElementById('click-sound');
+  const attackSound = document.getElementById('attack-sound');
+  const bossHitSound = document.getElementById('boss-hit-sound');
+
+  // מסכים נוספים
+  const miniGameScreen = document.getElementById('mini-game-screen');
+  const storeScreen = document.getElementById('store-screen');
+  const battleScreen = document.getElementById('battle-screen');
+  const storyScreen = document.getElementById('story-screen');
+  const storyText = document.getElementById('story-text');
+  const choiceButtons = document.getElementById('choice-buttons');
+
+  // פרטי קרב
+  const dragonHealthSpan = document.getElementById('dragon-health');
+  const bossHealthSpan = document.getElementById('boss-health');
+  const dragonHealthBar = document.getElementById('dragon-health-bar-fill');
+  const bossHealthBar = document.getElementById('boss-health-bar-fill');
+  const battleMessage = document.getElementById('battle-message');
+
+  // --------------------------------
+  // התחלת המשחק
+  function startGame() {
+    startScreen.classList.remove('active');
+    storyScreen.classList.add('active');
+    showStoryIntro();
+  }
+
+  // סיפור פתיחה עם בחירות
+  const storyLines = [
+    {
+      text: "לפני שנים רבות, באי קסום, נולד דרקון קטן וחמוד. הוא זקוק לעזרתך לגדול ולהפוך לדרקון האימתני שכולם יפחדו ממנו!",
+      choices: [
+        { text: "קח אותו לאימון קשה", effect: () => { trainingPoints += 5; nextStory(); } },
+        { text: "תן לו אהבה וטיפוח", effect: () => { score += 10; nextStory(); } }
+      ]
+    },
+    {
+      text: "במהלך המסע, אתה פוגש מכשף שמציע לך שיקויים. האם תקנה שיקויים או תסתמך על עצמך?",
+      choices: [
+        { text: "קנה שיקויים בחנות", effect: () => { openStore(); } },
+        { text: "המשך בלי שיקויים", effect: () => { nextStory(); } }
+      ]
+    },
+    {
+      text: "הדרקון שלך גדל וצריך לאמן אותו לקרבות! אתה מוכן לאתגר הראשון?",
+      choices: [
+        { text: "כן, אתחיל אתגר קליקים", effect: () => { openMiniGame(); } },
+        { text: "לא, אני רוצה להתחיל בגידול", effect: () => { enterGameScreen(); } }
+      ]
+    }
+  ];
+  let currentStoryIndex = 0;
+
+  function showStoryIntro() {
+    storyText.textContent = storyLines[currentStoryIndex].text;
+    choiceButtons.innerHTML = '';
+    storyLines[currentStoryIndex].choices.forEach(choice => {
+      const btn = document.createElement('button');
+      btn.textContent = choice.text;
+      btn.onclick = () => {
+        choice.effect();
+      };
+      choiceButtons.appendChild(btn);
+    });
+  }
+  function nextStory() {
+    currentStoryIndex++;
+    if (currentStoryIndex < storyLines.length) {
+      showStoryIntro();
+    } else {
+      enterGameScreen();
+    }
+  }
+  function enterGameScreen() {
+    storyScreen.classList.remove('active');
+    gameScreen.classList.add('active');
+    updateGameUI();
+  }
+
+  // --------------------------------
+  // פונקציות גידול הדרקון והפעולות
+  function performAction(action) {
+    let msg = "";
+    switch(action) {
+      case "feed":
+        score += 5 + trainingPoints;
+        msg = "האכלת את הדרקון! נקודות נוספות על אימון: " + trainingPoints;
+        break;
+      case "wash":
+        score += 3;
+        msg = "קילחת את הדרקון, הוא מריח נהדר!";
+        break;
+      case "water":
+        score += 4;
+        msg = "השקת את הדרקון, הוא מרגיש טוב!";
+        break;
+      case "pet":
+        score += 2;
+        msg = "ליטפת את הדרקון, הוא מאושר!";
+        break;
+      case "train":
+        trainingPoints += 2;
+        msg = "אימנת את הדרקון! אימון משפר נקודות בעתיד.";
+        break;
+    }
+    messageElement.textContent = msg;
+    score = Math.max(score, 0);
+    updateGameUI();
+  }
+
+  function updateGameUI() {
+    scoreElement.textContent = `נקודות: ${score}`;
+    let percent = Math.min((score / 100) * 100, 100);
+    powerFill.style.width = percent + "%";
+
+    // שדרוג הדרקון לפי נקודות
+    if (score >= 300 && dragonStage < 3) {
+      dragonStage = 3; // מצב בוס
+      dragonImg.src = "https://shorturl.at/afTZf"; // דרקון אימתני
+      messageElement.textContent = "דרקונך הפך לדרקון אימתני! מוכן לקרב הבוס!";
+      growSound.play();
+    } else if (score >= 150 && dragonStage < 2) {
+      dragonStage = 2; // גדול
+      dragonImg.src = "https://shorturl.at/bCGR5"; // דרקון בינוני
+      messageElement.textContent = "דרקונך גדל והתחזק!";
+      growSound.play();
+    } else if (score >= 50 && dragonStage < 1) {
+      dragonStage = 1; // קטן-בינוני
+      dragonImg.src = "https://shorturl.at/eoXY2"; // דרקון קטן-בינוני
+      messageElement.textContent = "דרקונך מתפתח יפה!";
+      growSound.play();
+    }
+  }
+
+  // --------------------------------
+  // אתגר קליקים (Mini Game)
+  let clickCount = 0;
+  let timeLeft = 10;
+  let clickInterval;
+
+  function openMiniGame() {
+    gameScreen.classList.remove('active');
+    miniGameScreen.classList.add('active');
+    clickCount = 0;
+    timeLeft = 10;
+    document.getElementById('click-count').textContent = `קליקים: ${clickCount}`;
+    document.getElementById('timer').textContent = `זמן שנותר: ${timeLeft}`;
+    clickInterval = setInterval(() => {
+      timeLeft--;
+      document.getElementById('timer').textContent = `זמן שנותר: ${timeLeft}`;
+      if (timeLeft <= 0) {
+        clearInterval(clickInterval);
+        finishMiniGame();
+      }
+    }, 1000);
+  }
+  function clickButton() {
+    clickCount++;
+    clickSound.play();
+    document.getElementById('click-count').textContent = `קליקים: ${clickCount}`;
+  }
+  function finishMiniGame() {
+    messageElement.textContent = `סיימת את אתגר הקליקים עם ${clickCount} קליקים!`;
+    score += clickCount * (magicActive ? 2 : 1); // שיקוי קסם מגדיל קליקים
+    updateGameUI();
+  }
+  function exitMiniGame() {
+    miniGameScreen.classList.remove('active');
+    gameScreen.classList.add('active');
+  }
+
+  // --------------------------------
+  // חנות שיקויים
+  function openStore() {
+    gameScreen.classList.remove('active');
+    storeScreen.classList.add('active');
+  }
+  function buyPotion(type, cost) {
+    if (score < cost) {
+      alert('אין לך מספיק נקודות לקנות את השיקוי!');
+      return;
+    }
+    score -= cost;
+    switch(type) {
+      case 'health':
+        dragonHealth = Math.min(dragonHealth + 20, maxDragonHealth);
+        messageElement.textContent = "שיקוי בריאות הוחל! הבריאות שלך עולה.";
+        break;
+      case 'training':
+        trainingPoints += 15;
+        messageElement.textContent = "שיקוי אימון הוחל! אימון הדרקון השתפר.";
+        break;
+      case 'magic':
+        magicActive = true;
+        messageElement.textContent = "שיקוי קסם הוחל! נקודות הקליקים מוכפלות.";
+        break;
+    }
+    updateGameUI();
+  }
+  function exitStore() {
+    storeScreen.classList.remove('active');
+    gameScreen.classList.add('active');
+    updateGameUI();
+  }
+
+  // --------------------------------
+  // קרב בוס
+  function startBattle() {
+    if (dragonStage < 3) {
+      alert('עליך לגדל את הדרקון לפחות לדרגה 3 לפני הקרב!');
+      return;
+    }
+    gameScreen.classList.remove('active');
+    battleScreen.classList.add('active');
+    dragonHealth = maxDragonHealth;
+    bossHealth = maxBossHealth;
+    updateBattleUI();
+    battleMessage.textContent = "קרב החל!";
+  }
+  function updateBattleUI() {
+    dragonHealthSpan.textContent = dragonHealth;
+    bossHealthSpan.textContent = bossHealth;
+    dragonHealthBar.style.width = (dragonHealth / maxDragonHealth) * 100 + '%';
+    bossHealthBar.style.width = (bossHealth / maxBossHealth) * 100 + '%';
+  }
+  function playerAttack() {
+    if (bossHealth <= 0 || dragonHealth <= 0) return;
+    attackSound.play();
+
+    // דרקון תוקף
+    let playerDamage = 10 + trainingPoints;
+    bossHealth -= playerDamage;
+    bossHealth = Math.max(0, bossHealth);
+    bossHitSound.play();
+
+    // בוס תוקף בחזרה באקראי
+    if (bossHealth > 0) {
+      let bossDamage = Math.floor(Math.random() * 15) + 5;
+      dragonHealth -= bossDamage;
+      dragonHealth = Math.max(0, dragonHealth);
+    }
+
+    updateBattleUI();
+
+    if (bossHealth <= 0) {
+      battleMessage.textContent = "ניצחת את הבוס! דרקונך הוא האגדה!";
+      score += 500;
+      updateGameUI();
+    } else if (dragonHealth <= 0) {
+      battleMessage.textContent = "הפסדת בקרב! תתאמן עוד ונסה שוב.";
+    } else {
+      battleMessage.textContent = `התקפת ונפגעת! דרקון פגע ב${playerDamage}, הבוס פגע ב${dragonHealth < maxDragonHealth ? maxDragonHealth - dragonHealth : 0}`;
+    }
+  }
+  function exitBattle() {
+    battleScreen.classList.remove('active');
+    gameScreen.classList.add('active');
+    updateGameUI();
+  }
+
+</script>
+</body>
+</html>
